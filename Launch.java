@@ -17,7 +17,12 @@ public class Launch {
 		assert(mincost.isInitialized());
 		
 	}
-	
+	/**
+	 * reads in the data and generates a network, initialized with a valid flow.
+	 * @param filename the name of the data-file
+	 * @return the new network
+	 * @throws IOException 
+	 */
 public static Network readData(String filename) throws IOException{
 		
 		Network mincost=null;
@@ -83,7 +88,7 @@ public static Network readData(String filename) throws IOException{
 					input.close();
 					System.exit(-1);
 				}
-				mincost.arcarr[arccount]=new Arc(startn,endn,lowerb,upperb,cost);
+				mincost.arcarr[arccount]=new Arc(startn,endn,lowerb,upperb,cost,lowerb);
 				arccount++;
 				line++;
 				break;
@@ -97,13 +102,10 @@ public static Network readData(String filename) throws IOException{
 		}
 	
 		input.close();
-		int m = 1+(mincost.nnodes)*(mincost.maxcost());
-		for(int i=0;i<nnodes;i++){
-			mincost.arcarr[i+narcs]=new Arc(0, i+1, 0, Integer.MAX_VALUE, m);
-			mincost.nodeprice[i]=m;
-		}
-		mincost.nodeprice[0]=0;
+		mincost.initFlowPrice();
 		mincost.initTree();
+		assert(mincost.isInitialized());
+		assert(mincost.isValidFlow());
 		return mincost;
 	}
 }
