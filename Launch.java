@@ -13,8 +13,15 @@ public class Launch {
 			System.out.println("Missing source name");
 			System.exit(1);
 		}
+		//TODO time measuring
 		Network mincost = readData(args[0]);
 		assert(mincost.isInitialized());
+		Boolean optimizable = mincost.simplex();
+		if(!optimizable){
+			System.out.println("There is no optimal extremum for the given mincost-flow instance.");
+		}else{
+			mincost.printSol();
+		}
 		
 	}
 	/**

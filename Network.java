@@ -101,5 +101,22 @@ public class Network {
 		return true;
 	}
 	
+	/**
+	 * optimizes a mincost-flow network with a valid initialized flow and tree solution using the network simplex algorithm
+	 * @return true if there exists a valid flow with minimal costs.
+	 */
+	public Boolean simplex() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	/**
+	 * prints the solution after the network-optimization
+	 */
+	public void printSol() {
+		// TODO Auto-generated method stub
+		
+	}
+	
 
 }
