@@ -106,8 +106,40 @@ public class Network {
 	 * @return true if there exists a valid flow with minimal costs.
 	 */
 	public Boolean simplex() {
-		// TODO Auto-generated method stub
+		
+		// 1. Initialisierung
+		Simptree t = tree;
+		Arc[] U;
+		Arc[] L = new Arc [narcs];
+		for(int i = 0; i< narcs; i++ ){
+			L[i] = this.arcarr[nnodes+i];			
+		}
+		
+		// 2. Berechnung der Knotenpreise
+		
+		// 3. Optimalitaetstest, Skript S.141
+		
+		// 4. Pricing
+		
+		// 5. Augmentieren
+		
+		// 6. Update
+		
+		
 		return null;
+	}
+	
+	public Boolean isopt(Arc a,Arc[] L,Arc[] U){
+		// muss hier equal hin? vielleicht ist es besser eine ausgelagerte Methode zu schreiben, die prueft ob a element eines Arc[] ist, anstatt dieser hier
+		for(int i=0; i < L.length; i++){
+			if(a == L[i] && L[i].cost < 0)return true;
+		}	
+		
+		for(int i=0; i < U.length; i++){
+			if(a == U[i] && U[i].cost > 0)return true;
+		}
+		
+		return false;
 	}
 	
 	/**
