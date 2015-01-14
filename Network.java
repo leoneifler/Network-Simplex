@@ -117,6 +117,20 @@ public class Network {
 		// TODO Auto-generated method stub
 		
 	}
-	
-
+	public void writeGraph() throws IOException{
+		int begin = 0;
+		int end = 0;
+		int length = narcs-1;
+		PrintWriter text = null;
+		text = new PrintWriter(new BufferedWriter(new FileWriter("graph.gv")));
+		text.println("digraph G {");
+		for(int i = 0;i <= length;i++){
+			begin = arcarr[i].startnode;
+			end = arcarr[i].endnode;
+			text.println(begin + " " + "->" + " " + end);
+		}
+		text.println("\n");
+		text.println("}");
+		text.close();
+	}
 }
