@@ -79,11 +79,11 @@ public class Network {
 		int m = 1+(this.nnodes)*(this.maxcost());
 		for(int i=1; i<nnodes; i++){
 			if(tempflow[i]<0){
-				arcarr[arcarr.length-nnodes+i]=new Arc(0,i,0,Integer.MAX_VALUE,m,-tempflow[i]);
+				arcarr[arcarr.length-nnodes+i]=new Arc(0,i,0,Integer.MAX_VALUE,m,-tempflow[i], true);
 				nodeprice[i]=m;
 			}
 			if(tempflow[i]>=0){
-				arcarr[arcarr.length-nnodes+i]=new Arc(i,0,0,Integer.MAX_VALUE,m,tempflow[i]);
+				arcarr[arcarr.length-nnodes+i]=new Arc(i,0,0,Integer.MAX_VALUE,m,tempflow[i], true);
 				nodeprice[i]=-m;
 			}
 		}
@@ -107,19 +107,23 @@ public class Network {
 	 */
 	public Boolean simplex() {
 		
-		// 1. Initialisierung
-		Simptree t = tree;
-		Arc[] U;
-		Arc[] L = new Arc [narcs];
-		for(int i = 0; i< narcs; i++ ){
-			L[i] = this.arcarr[nnodes+i];			
-		}
-		
 		// 2. Berechnung der Knotenpreise
 		
-		// 3. Optimalitaetstest, Skript S.141
+		// 3. Optimalitaetstest
 		
+		Arc pivot=findPivot();
+		if(null==pivot){
+			for(int i=0;i<this.nnodes; ++i){
+				if(arcarr[this.narcs-this.nnodes+i].isInTree)return false;
+			}
+			return true;
+		}
+				
 		// 4. Pricing
+		/*
+		 *  (da isopt(a,L,U) von 3. return false) nehme dieses a als e
+		 *  
+		 */
 		
 		// 5. Augmentieren
 		
@@ -129,17 +133,21 @@ public class Network {
 		return null;
 	}
 	
-	public Boolean isopt(Arc a,Arc[] L,Arc[] U){
+	public Arc findPivot(){
 		// muss hier equal hin? vielleicht ist es besser eine ausgelagerte Methode zu schreiben, die prueft ob a element eines Arc[] ist, anstatt dieser hier
-		for(int i=0; i < L.length; i++){
-			if(a == L[i] && L[i].cost < 0)return true;
-		}	
 		
-		for(int i=0; i < U.length; i++){
-			if(a == U[i] && U[i].cost > 0)return true;
+		for(int i=0;i<this.arcarr.length;++i){
+			Arc temp = arcarr[i];
+			int redcost = temp.cost-nodeprice[temp.endnode]+nodeprice[temp.startnode];
+			if(temp.flow==temp.upperb && redcost <= 0 && !temp.isInTree ){
+				return temp;
+			}
+			if(temp.flow==temp.lowerb && redcost >= 0 && !temp.isInTree){
+				return temp;
+			}
+
 		}
-		
-		return false;
+		return null;
 	}
 	
 	/**

@@ -1,4 +1,3 @@
-
 package net_simplex;
 
 import java.io.BufferedReader;
@@ -96,7 +95,7 @@ public static Network readData(String filename) throws IOException{
 					input.close();
 					System.exit(-1);
 				}
-				mincost.arcarr[arccount]=new Arc(startn,endn,lowerb,upperb,cost,lowerb);
+				mincost.arcarr[arccount]=new Arc(startn,endn,lowerb,upperb,cost,lowerb, false);
 				arccount++;
 				line++;
 				break;
