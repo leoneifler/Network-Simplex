@@ -18,6 +18,8 @@ public class Launch {
 		assert(mincost.isInitialized());
 		
 		Boolean optimizable = mincost.simplex();
+
+		system.out.println("happy family");
 		if(!optimizable){
 			System.out.println("There is no optimal extremum for the given mincost-flow instance.");
 		}else{
@@ -96,7 +98,7 @@ public static Network readData(String filename) throws IOException{
 					input.close();
 					System.exit(-1);
 				}
-				mincost.arcarr[arccount]=new Arc(startn,endn,lowerb,upperb,cost,lowerb);
+				mincost.arcarr[arccount]=new Arc(startn,endn,lowerb,upperb,cost,lowerb, false);
 				arccount++;
 				line++;
 				break;

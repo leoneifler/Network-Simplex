@@ -79,11 +79,11 @@ public class Network {
 		int m = 1+(this.nnodes)*(this.maxcost());
 		for(int i=1; i<nnodes; i++){
 			if(tempflow[i]<0){
-				arcarr[arcarr.length-nnodes+i]=new Arc(0,i,0,Integer.MAX_VALUE,m,-tempflow[i]);
+				arcarr[arcarr.length-nnodes+i]=new Arc(0,i,0,Integer.MAX_VALUE,m,-tempflow[i], true);
 				nodeprice[i]=m;
 			}
 			if(tempflow[i]>=0){
-				arcarr[arcarr.length-nnodes+i]=new Arc(i,0,0,Integer.MAX_VALUE,m,tempflow[i]);
+				arcarr[arcarr.length-nnodes+i]=new Arc(i,0,0,Integer.MAX_VALUE,m,tempflow[i], true);
 				nodeprice[i]=-m;
 			}
 		}
@@ -106,7 +106,47 @@ public class Network {
 	 * @return true if there exists a valid flow with minimal costs.
 	 */
 	public Boolean simplex() {
-		// TODO Auto-generated method stub
+		
+		// 2. Berechnung der Knotenpreise
+		
+		// 3. Optimalitaetstest
+		
+		Arc pivot=findPivot();
+		if(null==pivot){
+			for(int i=0;i<this.nnodes; ++i){
+				if(arcarr[this.narcs-this.nnodes+i].isInTree)return false;
+			}
+			return true;
+		}
+				
+		// 4. Pricing
+		/*
+		 *  (da isopt(a,L,U) von 3. return false) nehme dieses a als e
+		 *  
+		 */
+		
+		// 5. Augmentieren
+		
+		// 6. Update
+		
+		
+		return null;
+	}
+	
+	public Arc findPivot(){
+		// muss hier equal hin? vielleicht ist es besser eine ausgelagerte Methode zu schreiben, die prueft ob a element eines Arc[] ist, anstatt dieser hier
+		
+		for(int i=0;i<this.arcarr.length;++i){
+			Arc temp = arcarr[i];
+			int redcost = temp.cost-nodeprice[temp.endnode]+nodeprice[temp.startnode];
+			if(temp.flow==temp.upperb && redcost <= 0 && !temp.isInTree ){
+				return temp;
+			}
+			if(temp.flow==temp.lowerb && redcost >= 0 && !temp.isInTree){
+				return temp;
+			}
+
+		}
 		return null;
 	}
 	
@@ -117,6 +157,20 @@ public class Network {
 		// TODO Auto-generated method stub
 		
 	}
-	
-
+	public void writeGraph() throws IOException{
+		int begin = 0;
+		int end = 0;
+		int length = narcs-1;
+		PrintWriter text = null;
+		text = new PrintWriter(new BufferedWriter(new FileWriter("graph.gv")));
+		text.println("digraph G {");
+		for(int i = 0;i <= length;i++){
+			begin = arcarr[i].startnode;
+			end = arcarr[i].endnode;
+			text.println(begin + " " + "->" + " " + end);
+		}
+		text.println("\n");
+		text.println("}");
+		text.close();
+	}
 }
