@@ -1,15 +1,16 @@
 package net_simplex;
 
 import java.io.*;
-
+import java.util.ArrayList;
 
 
 public class Network {
-	int nnodes, narcs;
+	int nnodes, narcs, fakearcind;
 	int[] demand;
 	Arc[] arcarr; 
 	Simptree tree;
 	int[] nodeprice;
+	
 	
 	/**
 	 * the standard constructor, generating a new network
@@ -23,6 +24,7 @@ public class Network {
 		nodeprice= new int[nnodes];
 		this.nnodes=nnodes;
 		this.narcs=narcs;
+		this.fakearcind=this.narcs-this.nnodes+1;
 	}
 /**
  * checks if all elements of the network have been initialized
@@ -47,7 +49,7 @@ public class Network {
  */
 	public int maxcost() {
 		int max=0;
-		for(int i=0; i<arcarr.length-nnodes+1; i++){
+		for(int i=0; i<this.fakearcind; i++){
 			if(null!=arcarr[i]){
 				if(arcarr[i].cost>max)max=arcarr[i].cost;
 			}
@@ -64,8 +66,9 @@ public class Network {
 			this.tree.depth[i]=1;
 			this.tree.pred[i]=0;
 			this.tree.succ[i]=i+1;
-			this.tree.arcind[i-1]=this.narcs-this.nnodes+i-1;
+			this.tree.arcind[i-1]=this.fakearcind+i-1;
 		}
+		this.tree.succ[this.nnodes-1]=0;
 	}
 
 	/**
@@ -74,7 +77,7 @@ public class Network {
 	 */
 	public void initFlowPrice() {
 		int[] tempflow=demand.clone();
-		for(int i=0; i<arcarr.length-nnodes+1;i++){
+		for(int i=0; i<this.fakearcind;i++){
 			tempflow[arcarr[i].startnode]-=arcarr[i].lowerb;
 			tempflow[arcarr[i].endnode]+=arcarr[i].lowerb;
 			
@@ -82,11 +85,11 @@ public class Network {
 		int m = 1+(this.nnodes)*(this.maxcost());
 		for(int i=1; i<nnodes; i++){
 			if(tempflow[i]<0){
-				arcarr[arcarr.length-nnodes+i]=new Arc(0,i,0,Integer.MAX_VALUE,m,-tempflow[i], true);
+				arcarr[this.fakearcind+i-1]=new Arc(0,i,0,Integer.MAX_VALUE,m,-tempflow[i], true);
 				nodeprice[i]=m;
 			}
 			if(tempflow[i]>=0){
-				arcarr[arcarr.length-nnodes+i]=new Arc(i,0,0,Integer.MAX_VALUE,m,tempflow[i], true);
+				arcarr[this.fakearcind+i-1]=new Arc(i,0,0,Integer.MAX_VALUE,m,tempflow[i], true);
 				nodeprice[i]=-m;
 			}
 		}
@@ -110,32 +113,308 @@ public class Network {
 	 */
 	public Boolean simplex() {
 		
-		// 2. Berechnung der Knotenpreise
+		
 		
 		// 3. Optimalitaetstest + pivot-Element finden. 
 		
 		int pivot=findPivot();
-		if(-1==pivot){
-			for(int i=0;i<this.nnodes; ++i){
-				if(arcarr[this.narcs-this.nnodes+i].isInTree)return false;
+		
+		
+		while(-1!=pivot){
+			//find u,v from the pivot
+			Arc pivotarc = arcarr[pivot];
+			int u,v=0;
+			boolean udirection = true;
+			int strt= pivotarc.startnode;
+			int end=pivotarc.endnode;
+			
+			if(tree.depth[strt]>tree.depth[end]){
+				u=strt;
+				v=end;
+				if(pivotarc.flow==pivotarc.upperb)udirection=false;
+			}else{
+				v=strt;
+				u=end;
+				if(pivotarc.flow==pivotarc.lowerb)udirection=false;
 			}
-			return true;
-		}
+			
+			ArrayList<Integer> upath = new ArrayList<>();
+			ArrayList<Integer> vpath = new ArrayList<>();
+			upath.add(u);
+			vpath.add(v);
+			while(tree.depth[upath.get(upath.size()-1)]!=tree.depth[v]){
+				upath.add(tree.pred[upath.get(upath.size()-1)]);
+			}
+			while(upath.get(upath.size()-1)!=vpath.get(0)){
+				upath.add(tree.pred[upath.get(upath.size()-1)]);
+				vpath.add(0, tree.pred[vpath.get(0)]);
+			}
+			
+			ArrayList<Arc> uarcs = new ArrayList<>();
+			for(int i = 0;i<upath.size()-1;++i){
+				uarcs.add(findTreeArc(upath.get(i),upath.get(i+1)));
+			}
+			ArrayList<Arc> varcs = new ArrayList<>();
+			for(int i = 0;i<vpath.size()-1;++i){
+				varcs.add(0,findTreeArc(vpath.get(i),vpath.get(i+1)));
+			}
+			int eps = Integer.MAX_VALUE;
+			Arc f = null;
+			ArrayList<Arc> forwardarcs = new ArrayList<>();
+			ArrayList<Arc> backwardarcs = new ArrayList<>();
+			boolean[] isforwardarcu = new boolean[uarcs.size()];
+			boolean[] isforwardarcv = new boolean[varcs.size()];
+
+
+			for(int i=0; i<uarcs.size();++i){
+				Arc temp = uarcs.get(i);
+				if(udirection){
+					if(temp.endnode == upath.get(i)){
+						forwardarcs.add(temp);
+						isforwardarcu[i]=true;
+					}
+					else{
+						backwardarcs.add(temp);
+						isforwardarcu[i]=false;
+
+					}
+				}else{
+					if(temp.endnode == upath.get(i+1)){
+						forwardarcs.add(temp);
+						isforwardarcv[i]=true;
+
+					}
+					else{
+						backwardarcs.add(temp);
+						isforwardarcv[i]=false;
+
+					}
+				}
+			}
+			for(int i=0; i<varcs.size();++i){
+				Arc temp = varcs.get(i);
+				if(udirection){
+					if(temp.endnode == vpath.get(i))forwardarcs.add(temp);
+					else backwardarcs.add(temp);
+				}else{
+					if(temp.endnode == vpath.get(i+1))forwardarcs.add(temp);
+					else backwardarcs.add(temp);
+				}
+			}
+			if(!udirection){
+				if(pivotarc.endnode==u)forwardarcs.add(pivotarc);
+				else backwardarcs.add(pivotarc);
+			}else{
+				if(pivotarc.endnode==v)forwardarcs.add(pivotarc);
+				else backwardarcs.add(pivotarc);
+			}
+			for(int i=0;i <forwardarcs.size();++i){
+				Arc temp = forwardarcs.get(i);
+				eps=Math.min(eps, temp.upperb-temp.flow);
+			}
+			for(int i=0;i <backwardarcs.size();++i){
+				Arc temp = backwardarcs.get(i);
+				eps=Math.min(eps, temp.flow-temp.lowerb);
+			}
+			if(udirection){
+				for(int i=0; i<uarcs.size();++i){
+					if(isforwardarcu[i] && uarcs.get(i).flow+eps==uarcs.get(i).upperb){
+						f=uarcs.get(i);
+						break;
+					}
+					if(!isforwardarcu[i] && uarcs.get(i).flow-eps==uarcs.get(i).lowerb){
+						f=uarcs.get(i);
+						break;
+					}
+				}
+			}else{
+				for(int i=varcs.size()-1; i>=0;--i){
+					if(isforwardarcv[i] && varcs.get(i).flow+eps==varcs.get(i).upperb){
+						f=varcs.get(i);
+						break;
+					}
+					if(!isforwardarcv[i] && varcs.get(i).flow-eps==varcs.get(i).lowerb){
+						f=varcs.get(i);
+						break;
+					}
+				}
+			}
+			if(f==null)f=pivotarc;
+			
+			//add pivotarc as a forward or backward arc
+			
+			
+			//update nodeprice
+			int f1,f2;
+			int e1=pivotarc.startnode;
+			int e2=pivotarc.endnode;
+			if(tree.depth[f.endnode]>=tree.depth[f.startnode]){
+				f1=f.startnode;
+				f2=f.endnode;
+			}
+			else{
+				f1=f.endnode;
+				f2=f.startnode;
+			}
+			//z=f1 versuch um gleiche ebene zu managen
+			int z=f1;
+			int pivotdir=1;
+			
+			while(tree.depth[tree.succ[z]]>tree.depth[z]){
+				if(pivotarc.endnode==tree.succ[z]){
+					e1=pivotarc.startnode;
+					e2=pivotarc.endnode;
+					break;
+				}
+				if(pivotarc.startnode==tree.succ[z]){
+					pivotdir=-1;
+					e2=pivotarc.startnode;
+					e1=pivotarc.endnode;
+					break;
+				}
+				z++;
+			}
+			assert(e1!=-1 && e2!=-1);
+			
+			int redcost= pivotarc.cost+this.nodeprice[pivotarc.startnode]-this.nodeprice[pivotarc.endnode];
+			int y=f2;
+			nodeprice[y]+=pivotdir*redcost;
+			while(tree.depth[tree.succ[y]]>tree.depth[y]){
+				y=tree.succ[y];
+				nodeprice[y]+=pivotdir*redcost;
+			}
+			//augmentiere den fluss
+			for(int i=0;i<forwardarcs.size();++i){
+				forwardarcs.get(i).flow+=eps;
+			}
+			for(int i=0;i<backwardarcs.size();++i){
+				backwardarcs.get(i).flow-=eps;
+			}
+			
+			
+			//update succ[]depth[]
+			int[] tempdepth = tree.depth.clone();
+			tempdepth[e2]=tempdepth[e1]+1;
+			int a=f1;
+			int b=tree.succ[e1];
+			int i=e2;
+			while(tree.succ[a]!=f2){
+				a=tree.succ[a];
+			}
+			int k=i;
+			while(tree.depth[tree.succ[k]]>tree.depth[i]){
+				k=tree.succ[k];
+				tempdepth[k]=tempdepth[tree.pred[k]]+1;
+			}
+			int r = tree.succ[k];
+			while(i!=f2){
+				int j=i;
+				i=tree.pred[i];
+				tempdepth[i]=tempdepth[j]+1;
 				
-		// 4. Pricing
-		/*
-		 *  (da isopt(a,L,U) von 3. return false) nehme dieses a als e
-		 *  
-		 */
+				tree.succ[k]=i;
+				k=i;
+				while(tree.succ[k]!=j){
+					k=tree.succ[k];
+					tempdepth[k]=tempdepth[tree.pred[k]]+1;
+				}
+				if(tree.depth[r]>tree.depth[i]){
+					tree.succ[k]=r;
+					while(tree.depth[tree.succ[k]]>tree.depth[i]){
+						k=tree.succ[k];
+						tempdepth[k]=tempdepth[tree.pred[k]];
+					}
+					r=tree.succ[k];
+				}
+			}
+			tree.succ[a]=r;
+			tree.succ[e1]=e2;
+			
+			if(e1!=a)tree.succ[k]=b;
+			else tree.succ[k]=r;
+			
+			tree.depth=tempdepth;
+			//update pred[] and depth[]
+			int newpar=e1;
+			int current=e2;
+			while(current!=f1){
+				int oldpar=tree.pred[current]; 
+				tree.pred[current]=newpar;
+				newpar=current;
+				current=oldpar;
+			}
+			tree.depth[e2]=tree.depth[e1]+1;
+			
+			pivotarc.isInTree=true;
+			f.isInTree=false;
+			for(int j=0;j<tree.arcind.length;++j){
+				Arc temp=arcarr[tree.arcind[j]];
+				if(f.startnode==temp.startnode && f.endnode==temp.endnode){
+					tree.arcind[j]=pivot;
+					break;
+				}
+			}
+			
+			
+			
+			//update the pivot element
+			
+			pivot=this.findPivot();
 		
-		// 5. Augmentieren
+			// 4. Pricing
+			/*
+			 *  (da isopt(a,L,U) von 3. return false) nehme dieses a als e
+			 *  
+			 */
+			
+			// 5. Augmentieren
+			
+			// 6. Update
+			
+		}
 		
-		// 6. Update
+		for(int i=0;i<this.nnodes-1; ++i){
+			if(arcarr[this.fakearcind+i].isInTree)return false;
+		}
+		return true;
 		
-		
-		return null;
 	}
-	
+	private Arc findTreeArc(int i, int j) {
+		for(int c=0;c<tree.arcind.length;++c){
+			Arc temparc = arcarr[tree.arcind[c]];
+			if((temparc.startnode==i && temparc.endnode==j) || (temparc.endnode==i && temparc.startnode==j)){
+				return temparc;
+			}
+		}
+		return null;
+		
+	}
+	/**
+	private void computeNodeprices() {
+		nodeprice[0]=0;
+		int temp =0;
+		while(tree.succ[temp]<nnodes){
+			nodeprice[tree.succ[temp]]=nodeprice[tree.pred[temp]];
+			temp=tree.succ[temp];
+		}
+		
+		
+		
+		
+		int temp = this.nnodes-1;
+		while(temp >0){
+			int i=0;
+			while(arcarr[tree.arcind[i]].startnode!=temp && arcarr[tree.arcind[i]].endnode!=temp){
+				i++;
+			}
+			Arc temparc = arcarr[tree.arcind[i]];
+			if(temparc.startnode==temp){
+				nodeprice[temparc.endnode]=nodeprice[temp]+temparc.cost;
+			}else{
+				nodeprice[temparc.startnode]=nodeprice[temp]-temparc.cost;
+			}
+		}
+	}*/
 	public int findPivot(){
 		// muss hier equal hin? vielleicht ist es besser eine ausgelagerte Methode zu schreiben, die prueft ob a element eines Arc[] ist, anstatt dieser hier
 		
@@ -143,10 +422,10 @@ public class Network {
 			Arc temp = arcarr[i];
 			if(temp.isInTree)continue;
 			int redcost = temp.cost-nodeprice[temp.endnode]+nodeprice[temp.startnode];
-			if(temp.flow==temp.upperb && redcost <= 0 ){
+			if(temp.flow==temp.upperb && redcost > 0 ){
 				return i;
 			}
-			if(temp.flow==temp.lowerb && redcost >= 0 ){
+			if(temp.flow==temp.lowerb && redcost < 0 ){
 				return i;
 			}
 
