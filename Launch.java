@@ -19,7 +19,7 @@ public class Launch {
 		
 		Boolean optimizable = mincost.simplex();
 
-		system.out.println("happy family");
+		System.out.println("happy family");
 		if(!optimizable){
 			System.out.println("There is no optimal extremum for the given mincost-flow instance.");
 		}else{

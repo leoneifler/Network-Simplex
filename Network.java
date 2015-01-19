@@ -1,5 +1,7 @@
 package net_simplex;
 
+import java.io.*;
+
 
 
 public class Network {
@@ -62,6 +64,7 @@ public class Network {
 			this.tree.depth[i]=1;
 			this.tree.pred[i]=0;
 			this.tree.succ[i]=i+1;
+			this.tree.arcind[i-1]=this.narcs-this.nnodes+i-1;
 		}
 	}
 
@@ -109,10 +112,10 @@ public class Network {
 		
 		// 2. Berechnung der Knotenpreise
 		
-		// 3. Optimalitaetstest
+		// 3. Optimalitaetstest + pivot-Element finden. 
 		
-		Arc pivot=findPivot();
-		if(null==pivot){
+		int pivot=findPivot();
+		if(-1==pivot){
 			for(int i=0;i<this.nnodes; ++i){
 				if(arcarr[this.narcs-this.nnodes+i].isInTree)return false;
 			}
@@ -133,21 +136,22 @@ public class Network {
 		return null;
 	}
 	
-	public Arc findPivot(){
+	public int findPivot(){
 		// muss hier equal hin? vielleicht ist es besser eine ausgelagerte Methode zu schreiben, die prueft ob a element eines Arc[] ist, anstatt dieser hier
 		
 		for(int i=0;i<this.arcarr.length;++i){
 			Arc temp = arcarr[i];
+			if(temp.isInTree)continue;
 			int redcost = temp.cost-nodeprice[temp.endnode]+nodeprice[temp.startnode];
-			if(temp.flow==temp.upperb && redcost <= 0 && !temp.isInTree ){
-				return temp;
+			if(temp.flow==temp.upperb && redcost <= 0 ){
+				return i;
 			}
-			if(temp.flow==temp.lowerb && redcost >= 0 && !temp.isInTree){
-				return temp;
+			if(temp.flow==temp.lowerb && redcost >= 0 ){
+				return i;
 			}
 
 		}
-		return null;
+		return -1;
 	}
 	
 	/**
