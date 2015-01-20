@@ -18,10 +18,12 @@ public class Launch {
 		assert(mincost.isInitialized());
 		
 		Boolean optimizable = mincost.simplex();
-
+		mincost.writeTree();
 		if(!optimizable){
 			System.out.println("There is no optimal extremum for the given mincost-flow instance.");
 		}else{
+			System.out.println("There is an optimal flow.");
+			mincost.printCosts();
 			mincost.printSol();
 		}
 		
