@@ -23,14 +23,20 @@ public class Simptree {
 		for(int i:succ){
 			test1=succ[test1];
 		}
-		if(test1!=0)return false;
+		if(test1!=0){
+			System.out.println("succ-array stimmt nicht");
+			return false;
+		}
 		
 		for(int i:depth){
 			int test2=i;
 			for(int j=0;j<depth[i];j++){
 				test2=pred[test2];
 			}
-			if(test2!=0)return false;
+			if(test2!=0){
+				System.out.println("tiefe/parent von Knoten " + i + " stimmt nicht");
+				return false;
+			}
 		}
 		
 		return true;

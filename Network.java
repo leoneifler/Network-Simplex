@@ -407,7 +407,7 @@ public class Network {
 			int redcost= pivotarc.cost+this.nodeprice[pivotarc.startnode]-this.nodeprice[pivotarc.endnode];
 			int y=f2;
 			nodeprice[y]+=pivotdir*redcost;
-			while(tree.depth[tree.succ[y]]>tree.depth[y]){
+			while(tree.depth[tree.succ[y]]>tree.depth[f2]){
 				y=tree.succ[y];
 				nodeprice[y]+=pivotdir*redcost;
 			}
