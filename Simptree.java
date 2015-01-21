@@ -20,11 +20,19 @@ public class Simptree {
 
 	public boolean isValidTree() {
 		int test1=0;
+		boolean[] test = new boolean[succ.length];
+		test[test1]=true;
 		for(int i:succ){
 			test1=succ[test1];
+			test[test1]=true;
 		}
+		for(int i=0;i<test.length;++i){
+			if(!test[i])System.out.println(i);
+		}
+			
 		if(test1!=0){
-			System.out.println("succ-array stimmt nicht");
+			//System.out.println("succ-array stimmt nicht");
+			//this.printSucc();
 			return false;
 		}
 		
@@ -34,12 +42,20 @@ public class Simptree {
 				test2=pred[test2];
 			}
 			if(test2!=0){
-				System.out.println("tiefe/parent von Knoten " + i + " stimmt nicht");
+				//System.out.println("tiefe/parent von Knoten " + i + " stimmt nicht");
 				return false;
 			}
 		}
 		
 		return true;
+	}
+
+	private void printSucc() {
+		int temp=0;
+		for(int i=0;i<this.succ.length;i++){
+			//System.out.println(temp);
+			temp=succ[temp];
+		}
 	}
 	
 	

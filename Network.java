@@ -123,11 +123,7 @@ public class Network {
 		while(-1!=pivot){
 			//find u,v from the pivot
 			Arc pivotarc = arcarr[pivot];
-			if(pivotarc.startnode==22 && pivotarc.endnode==112){
-				
-				int i=0;
-				i++;
-			}
+			
 			int u,v=0;
 			//udirection tells us if we go along the upath from the joint 
 			boolean udirection = true;
@@ -149,10 +145,11 @@ public class Network {
 			upath.add(u);
 			vpath.add(v);
 			
+			
 			while(tree.depth[upath.get(upath.size()-1)]!=tree.depth[v]){
 				upath.add(tree.pred[upath.get(upath.size()-1)]);
 			}
-			while(upath.get(upath.size()-1)!=vpath.get(0)){
+			while(upath.get(upath.size()-1).intValue()!=vpath.get(0).intValue()){
 				upath.add(tree.pred[upath.get(upath.size()-1)]);
 				vpath.add(0, tree.pred[vpath.get(0)]);
 			}
@@ -183,7 +180,7 @@ public class Network {
 				for(int i=0;i<varcs.size();i++){
 					//determine whether it is a forward-arc
 					Arc temp = varcs.get(i);
-					if(temp.endnode==vpath.get(i)){
+					if(temp.endnode==vpath.get(i).intValue()){
 						isforwardarc[i]=true;
 						eps=Math.min(eps, temp.upperb-temp.flow);
 					}
@@ -199,7 +196,7 @@ public class Network {
 				for(int i=0;i<varcs.size();i++){
 					//determine whether it is a forward-arc
 					Arc temp = varcs.get(i);
-					if(temp.endnode==vpath.get(i+1)){
+					if(temp.endnode==vpath.get(i+1).intValue()){
 						isforwardarc[i]=true;
 						eps=Math.min(eps, temp.upperb-temp.flow);
 					}
@@ -249,6 +246,7 @@ public class Network {
 					}
 				}
 			}
+		
 			assert(e1!=-1 && e2!=-1 && f1!=-1 && f2!=-1);
 			
 			/**
@@ -430,7 +428,7 @@ public class Network {
 				continue;
 			}
 			
-			//update succ[]depth[]
+			//update succ[]depth[] and pred[]
 			
 			int[] tempdepth = tree.depth.clone();
 			int[] temppred = tree.pred.clone();
@@ -468,27 +466,23 @@ public class Network {
 					}
 					r=tree.succ[k];
 				}
+				
 			}
-			tree.succ[a]=r;
-			tree.succ[e1]=e2;
 			
-			if(e1!=a)tree.succ[k]=b;
-			else tree.succ[k]=r;
 			
+			
+			if(e1!=a){
+				tree.succ[a]=r;
+				tree.succ[e1]=e2;
+				tree.succ[k]=b;
+			}else{
+				tree.succ[e1]=e2;
+				tree.succ[k]=r;
+			}
+			assert(this.tree.isValidTree());
 			tree.depth=tempdepth;
 			tree.pred=temppred;
-			//update pred[] 
-			/**
-			int newpar=e1;
-			int current=e2;
-			while(current!=f1){
-				int oldpar=tree.pred[current]; 
-				tree.pred[current]=newpar;
-				newpar=current;
-				current=oldpar;
-			}
-			*/
-			assert(this.tree.isValidTree());
+			
 			
 			
 			pivotarc.isInTree=true;
@@ -506,7 +500,6 @@ public class Network {
 			//update the pivot element
 			
 			pivot=this.findPivot();
-			System.out.println(pivotarc.startnode + " " + pivotarc.endnode);
 		
 		}
 		
