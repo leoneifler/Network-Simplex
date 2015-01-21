@@ -14,7 +14,9 @@ public class Launch {
 			System.exit(1);
 		}
 		//TODO time measuring
+		long starttime = System.nanoTime();
 		Network mincost = readData(args[0]);
+		System.out.println("Processing the file: " + args[0]);
 		assert(mincost.isInitialized());
 		
 		Boolean optimizable = mincost.simplex();
@@ -26,7 +28,8 @@ public class Launch {
 			mincost.printCosts();
 			mincost.printSol();
 		}
-		
+		long endtime = System.nanoTime();
+		System.out.println("The run time is:" + (endtime-starttime)/1000000 + " ms");
 	}
 	/**
 	 * reads in the data and generates a network, initialized with a valid flow.
@@ -36,10 +39,11 @@ public class Launch {
 	 */
 public static Network readData(String filename) throws IOException{
 		
-		Network mincost=null;
+		TempNetwork mincost=null;
+		
 		BufferedReader input= new BufferedReader(new FileReader(filename));
 		//TODO error handling
-		int nodecount=1;
+		
 		int arccount=0;
 		int nnodes=0;
 		int narcs=0;
@@ -61,18 +65,20 @@ public static Network readData(String filename) throws IOException{
 				}
 				nnodes=Integer.parseInt(split[2]);
 				narcs=Integer.parseInt(split[3]);
-				mincost=new Network(nnodes+1,narcs+nnodes);
+				mincost=new TempNetwork(nnodes+1, narcs);
 				line++;
 				break;
 			case 'n':
-				if(null==mincost||nodecount!=Integer.parseInt(split[1]) || split.length!=3 || nodecount>nnodes){
+				if(null==mincost || split.length!=3 ||Integer.parseInt(split[1])>nnodes){
+					//nodecount!=Integer.parseInt(split[1])
 					System.out.println("Error with input at line " + String.valueOf(line) + " .Check the input format. Specified line is:");
 					System.out.println(buf);
 					input.close();
 					System.exit(-1);
 				}
-				mincost.demand[nodecount]=Integer.parseInt(split[2]);
-				nodecount++;
+				
+				mincost.demand.set(Integer.parseInt(split[1]), Integer.parseInt(split[2]));
+				
 				line++;
 				break;
 			case 'a':
@@ -99,24 +105,30 @@ public static Network readData(String filename) throws IOException{
 					input.close();
 					System.exit(-1);
 				}
-				mincost.arcarr[arccount]=new Arc(startn,endn,lowerb,upperb,cost,lowerb, false);
+				mincost.arcarr.add(new Arc(startn,endn,lowerb,upperb,cost,lowerb, false));
 				arccount++;
 				line++;
 				break;
 			}
 			
 		}
-		if(nnodes!=nodecount-1 ||narcs!=arccount){
+		if(narcs!=arccount){
 			System.out.println("Error with input. Less nodes or arcs than specified in the problem line.");
 			input.close();
 			System.exit(-1);
 		}
-	
+		
+		
 		input.close();
-		mincost.initFlowPrice();
-		mincost.initTree();
-		assert(mincost.isInitialized());
-		assert(mincost.isValidFlow());
-		return mincost;
+		mincost.handleParallels();
+		Network mincostflow = mincost.createNetwork();
+		
+		mincostflow.initFlowPrice();
+		mincostflow.initTree();
+		assert(mincostflow.isInitialized());
+		assert(mincostflow.isValidFlow());
+		
+		
+		return mincostflow;
 	}
 }

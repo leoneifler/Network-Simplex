@@ -547,24 +547,32 @@ public class Network {
 	}*/
 	public int findPivot(){
 		// muss hier equal hin? vielleicht ist es besser eine ausgelagerte Methode zu schreiben, die prueft ob a element eines Arc[] ist, anstatt dieser hier
-		
+		int eps=0;
+		int pivotindex=-1;
 		for(int i=0;i<this.arcarr.length;++i){
 			Arc temp = arcarr[i];
+			
 			if(temp.isInTree)continue;
 			int redcost = temp.cost-nodeprice[temp.endnode]+nodeprice[temp.startnode];
 			if(temp.flow==temp.upperb && redcost > 0 ){
-				return i;
+				if(eps<redcost){
+					eps=redcost;
+					pivotindex=i;
+				}
 			}
 			if(temp.flow==temp.lowerb && redcost < 0 ){
-				return i;
+				if(eps<-redcost){
+					eps=-redcost;
+					pivotindex=i;
+				}
 			}
 
 		}
-		return -1;
+		return pivotindex;
 	}
 	
 	public void printCosts(){
-		int costs=0;
+		long costs=0;
 		for (Arc temp: arcarr){
 			costs+=(temp.cost*temp.flow);
 		}
@@ -609,4 +617,5 @@ public class Network {
 		text.println("}");
 		text.close();
 	}
+	
 }
