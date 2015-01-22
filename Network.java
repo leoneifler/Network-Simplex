@@ -82,15 +82,18 @@ public class Network {
 			tempflow[arcarr[i].endnode]+=arcarr[i].lowerb;
 			
 		}
-		int m = 1+(this.nnodes)*(this.maxcost());
+		long m = 1+(long)(this.nnodes)*(long)(this.maxcost());
+		long n = (int)m;
+		assert(m==n);
+		int k=(int)m;
 		for(int i=1; i<nnodes; i++){
 			if(tempflow[i]<0){
-				arcarr[this.fakearcind+i-1]=new Arc(0,i,0,Integer.MAX_VALUE,m,-tempflow[i], true);
-				nodeprice[i]=m;
+				arcarr[this.fakearcind+i-1]=new Arc(0,i,0,Integer.MAX_VALUE,k,-tempflow[i], true);
+				nodeprice[i]=k;
 			}
 			if(tempflow[i]>=0){
-				arcarr[this.fakearcind+i-1]=new Arc(i,0,0,Integer.MAX_VALUE,m,tempflow[i], true);
-				nodeprice[i]=-m;
+				arcarr[this.fakearcind+i-1]=new Arc(i,0,0,Integer.MAX_VALUE,k,tempflow[i], true);
+				nodeprice[i]=-k;
 			}
 		}
 		
@@ -174,8 +177,10 @@ public class Network {
 			int eps = Integer.MAX_VALUE;
 			Arc f = null;
 			int e1=-1,e2=-1,f1=-1,f2=-1;
+			
 			//determine all forward/backward-arcs and calculate the amount eps which the flow is shifted
 			boolean[] isforwardarc = new boolean[varcs.size()];
+			
 			if(udirection){
 				for(int i=0;i<varcs.size();i++){
 					//determine whether it is a forward-arc
@@ -215,13 +220,11 @@ public class Network {
 						if(i>pivotindex){
 							e2=u;
 							e1=v;
-							f2=vpath.get(i);
-							f1=vpath.get(i+1);
+							
 						}else{
 							e2=v;
 							e1=u;
-							f2=vpath.get(i+1);
-							f1=vpath.get(i);
+							
 						}
 						break;
 					}
@@ -234,170 +237,26 @@ public class Network {
 						if(i<pivotindex){
 							e2=v;
 							e1=u;
-							f2=vpath.get(i+1);
-							f1=vpath.get(i);
+							
 						}else{
 							e2=u;
 							e1=v;
-							f2=vpath.get(i);
-							f1=vpath.get(i+1);
+							
 						}
 						break;
 					}
 				}
 			}
 		
+			if(this.tree.depth[f.startnode]>this.tree.depth[f.endnode]){
+				f2=f.startnode;
+				f1=f.endnode;
+			}else{
+				f2=f.endnode;
+				f1=f.startnode;
+			}
 			assert(e1!=-1 && e2!=-1 && f1!=-1 && f2!=-1);
 			
-			/**
-			ArrayList<Arc> forwardarcs = new ArrayList<Arc>();
-			ArrayList<Arc> backwardarcs = new ArrayList<Arc>();
-			boolean[] isforwardarcu = new boolean[uarcs.size()];
-			boolean[] isforwardarcv = new boolean[varcs.size()];
-
-
-			for(int i=0; i<uarcs.size();++i){
-				Arc temp = uarcs.get(i);
-				if(udirection){
-					if(temp.endnode == upath.get(i)){
-						forwardarcs.add(temp);
-						isforwardarcu[i]=true;
-					}
-					else{
-						backwardarcs.add(temp);
-						isforwardarcu[i]=false;
-
-					}
-				}else{
-					if(temp.endnode == upath.get(i+1)){
-						forwardarcs.add(temp);
-						isforwardarcu[i]=true;
-
-					}
-					else{
-						backwardarcs.add(temp);
-						isforwardarcu[i]=false;
-
-					}
-				}
-			}
-			for(int i=0; i<varcs.size();++i){
-				Arc temp = varcs.get(i);
-				if(udirection){
-					if(temp.endnode == vpath.get(i+1)){
-						forwardarcs.add(temp);
-						isforwardarcv[i]=true;
-					}
-					else{
-						backwardarcs.add(temp);
-						isforwardarcv[i]=false;
-					}
-				}else{
-					if(temp.endnode == vpath.get(i)){
-						forwardarcs.add(temp);
-						isforwardarcv[i]=true;
-					}
-					else{
-						backwardarcs.add(temp);
-						isforwardarcv[i]=false;
-					}
-				}
-			}
-			
-			//add pivotarc as a forward or backward arc
-			
-			if(!udirection){
-				if(pivotarc.endnode==u)forwardarcs.add(pivotarc);
-				else backwardarcs.add(pivotarc);
-			}else{
-				if(pivotarc.endnode==v)forwardarcs.add(pivotarc);
-				else backwardarcs.add(pivotarc);
-			}
-			
-			//compute amount of augmentation
-			for(int i=0;i <forwardarcs.size();++i){
-				Arc temp = forwardarcs.get(i);
-				eps=Math.min(eps, temp.upperb-temp.flow);
-			}
-			for(int i=0;i <backwardarcs.size();++i){
-				Arc temp = backwardarcs.get(i);
-				eps=Math.min(eps, temp.flow-temp.lowerb);
-			}
-			
-			//determine the tree-leaving arc f
-			//TODO this is wrong. check it. f does not have to be in uarcs if udirection is true.
-			//TODO include the setting of e1,e2,f1,f2 in this step. 
-			if(udirection){
-				for(int i=0; i<uarcs.size();++i){
-					if(isforwardarcu[i] && uarcs.get(i).flow+eps==uarcs.get(i).upperb){
-						f=uarcs.get(i);
-						break;
-					}
-					if(!isforwardarcu[i] && uarcs.get(i).flow-eps==uarcs.get(i).lowerb){
-						f=uarcs.get(i);
-						break;
-					}
-				}
-			}else{
-				for(int i=varcs.size()-1; i>=0;--i){
-					if(isforwardarcv[i] && varcs.get(i).flow+eps==varcs.get(i).upperb){
-						f=varcs.get(i);
-						break;
-					}
-					if(!isforwardarcv[i] && varcs.get(i).flow-eps==varcs.get(i).lowerb){
-						f=varcs.get(i);
-						break;
-					}
-				}
-			}
-			if(f==null)f=pivotarc;
-		
-			
-			//update nodeprice
-			int f1,f2;
-			
-			//TODO f2 und e2 sind so zu w�hlen, dass beide in S sind
-			
-			if(tree.depth[f.endnode]>tree.depth[f.startnode]){
-				f1=f.startnode;
-				f2=f.endnode;
-			}
-			else{
-				f1=f.endnode;
-				f2=f.startnode;
-			}
-			int e1,e2;
-			int pivotdir=1;
-			if(udirection){
-				e2=u;
-				e1=v;
-				if(pivotarc.endnode==u)pivotdir=-1;
-			}else{
-				e2=v;
-				e1=u;
-				if(pivotarc.endnode==v)pivotdir=-1;
-			}
-			*/
-			//z=f1 versuch um gleiche ebene zu managen
-			/**int z=f1;
-			int pivotdir=1;
-			
-			while(tree.depth[tree.succ[z]]>tree.depth[z]){
-				if(pivotarc.endnode==tree.succ[z]){
-					e1=pivotarc.startnode;
-					e2=pivotarc.endnode;
-					break;
-				}
-				if(pivotarc.startnode==tree.succ[z]){
-					pivotdir=-1;
-					e2=pivotarc.startnode;
-					e1=pivotarc.endnode;
-					break;
-				}
-				z++;
-			}
-			assert(e1!=-1 && e2!=-1);
-			**/
 			int pivotdir; 
 			if(pivotarc.endnode==e2)pivotdir=1;
 			else pivotdir=-1;
@@ -422,12 +281,13 @@ public class Network {
 				if(isforwardarc[i])temp.flow+=eps;
 				else temp.flow-=eps;
 			}
+			/**
 			//TODO this is probably garbage
 			if((e1==f1 && e2==f2)||(e1==f2 && e2==f1)){
 				pivot=findPivot();
 				continue;
 			}
-			
+			*/
 			//update succ[]depth[] and pred[]
 			
 			int[] tempdepth = tree.depth.clone();
@@ -479,11 +339,13 @@ public class Network {
 				tree.succ[e1]=e2;
 				tree.succ[k]=r;
 			}
+			
+			
 			assert(this.tree.isValidTree());
 			tree.depth=tempdepth;
 			tree.pred=temppred;
 			
-			
+			//abschliessendes update
 			
 			pivotarc.isInTree=true;
 			f.isInTree=false;
@@ -495,11 +357,13 @@ public class Network {
 				}
 			}
 			
+			assert(this.isValidFlow());
 			
 			
 			//update the pivot element
 			
 			pivot=this.findPivot();
+			//this.printCosts();
 		
 		}
 		
@@ -519,32 +383,7 @@ public class Network {
 		return null;
 		
 	}
-	/**
-	private void computeNodeprices() {
-		nodeprice[0]=0;
-		int temp =0;
-		while(tree.succ[temp]<nnodes){
-			nodeprice[tree.succ[temp]]=nodeprice[tree.pred[temp]];
-			temp=tree.succ[temp];
-		}
-		
-		
-		
-		
-		int temp = this.nnodes-1;
-		while(temp >0){
-			int i=0;
-			while(arcarr[tree.arcind[i]].startnode!=temp && arcarr[tree.arcind[i]].endnode!=temp){
-				i++;
-			}
-			Arc temparc = arcarr[tree.arcind[i]];
-			if(temparc.startnode==temp){
-				nodeprice[temparc.endnode]=nodeprice[temp]+temparc.cost;
-			}else{
-				nodeprice[temparc.startnode]=nodeprice[temp]-temparc.cost;
-			}
-		}
-	}*/
+	
 	public int findPivot(){
 		// muss hier equal hin? vielleicht ist es besser eine ausgelagerte Methode zu schreiben, die prueft ob a element eines Arc[] ist, anstatt dieser hier
 		int eps=0;
@@ -568,13 +407,14 @@ public class Network {
 			}
 
 		}
+		
 		return pivotindex;
 	}
 	
 	public void printCosts(){
 		long costs=0;
 		for (Arc temp: arcarr){
-			costs+=(temp.cost*temp.flow);
+			costs+=((long)temp.cost*(long)temp.flow);
 		}
 		System.out.println("The total costs of the problem are: " + costs);
 	}
